@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset=utf-8>
+		<title>My first three.js app</title>
+		<style>
+			body { margin: 0; }
+			canvas { width: 100%; height: 100% }
+			#info {
+				position: absolute;
+				top: 10px;
+				left:10px;
+				width: 100%;
+				z-index: 100;
+				display:block;
+				color: white;
+			}
+		</style>
+	</head>
+	<body>
+		<script src="threeJs/three.js"></script>
+		<script src="threeJs/Detector.js"></script>
+		<script src="threeJs/TrackballControls.js"></script>
+		<script>
+			// To check if the browser supports webGL
+			function detectWebGKAndRun() {
+				if (Detector.webgl) {
+				    init();
+				    animate();
+				} else {
+				    var warning = Detector.getWebGLErrorMessage();
+				    document.getElementById('container').appendChild(warning);
+				}
+			}
+
+			// render loop, 60 times per second
+			function animate() {
+				requestAnimationFrame( animate );
+				workspace.controls.update();
+				workspace.renderer.render( workspace.scene, workspace.camera );
+				
+				// write what you want the canvas render
+				rotateCube(renderObjs.cube);
+			}
+
+			function rotateCube(cube) {
+				cube.rotation.x += 0.1;
+				cube.rotation.y += 0.1;
+				cube.rotation.z += 0.1;
+			}
+
+			function init() {
+
+				workspace.scene = new THREE.Scene();
+
+				// Four params:
+				// field of view: 視野的遠度
+				// aspect ratio: You almost always want to use the width of the element divided by the height, or you'll get the same result as when you play old movies on a widescreen TV - the image looks squished.
+				// near, far: objects further away from the camera than the value of far or closer than near won't be rendered (perfomance concern)
+				workspace.camera = new THREE.PerspectiveCamera( 100, window.innerWidth / window.innerHeight, 0.1, 1000 );
+
+				// May have a fallback for old browsers not support webGL
+				workspace.renderer = new THREE.WebGLRenderer();
+				workspace.renderer.setSize( window.innerWidth, window.innerHeight);		
+
+				workspace.camera.position.set(0, 5, 6);
+				workspace.camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+				// Append a canvas element to body
+				document.body.appendChild( workspace.renderer.domElement );	
+
+				// controlls
+				workspace.controls = new THREE.TrackballControls( workspace.camera, workspace.renderer.domElement );
+
+				// axes
+				workspace.scene.add( new THREE.AxisHelper( 10 ) );
+
+				initBattleStage();
+				initCube();
+				initLine();
+			}
+
+			function initBattleStage() {
+				// instantiate a loader
+				var loader = new THREE.TextureLoader();
+
+				// load a resource
+				loader.load(
+					// resource URL
+					'images/stage.png',
+					// Function when resource is loaded
+					function ( texture ) {
+						// do something with the texture
+						var material = new THREE.MeshBasicMaterial( {
+							map: texture
+						 } );
+						var plane = new THREE.Mesh( new THREE.PlaneGeometry( 10, 10 ), material );				
+						plane.position.set(0, 0, 0);
+						plane.lookAt(new THREE.Vector3(0, 1, 0));
+						plane.material.side = THREE.DoubleSide;
+
+				
+						workspace.scene.add( plane );
+					},
+					// Function called when download progresses
+					function ( xhr ) {
+						console.log( (xhr.loaded / xhr.total * 100) + '% loaded' );
+					},
+					// Function called when download errors
+					function ( xhr ) {
+						console.log( 'An error happened' );
+					}
+				);
+			}
+
+			function initCube() {
+				// Create a cube
+				var geometry = new THREE.BoxGeometry( 1, 1, 1 );
+				var material = new THREE.MeshBasicMaterial( { color: 0x00ff00, wireframe: true  } );
+				var cube = new THREE.Mesh( geometry, material );
+				cube.position.set(1, 1, -5);
+				workspace.scene.add( cube );
+				renderObjs.cube = cube;
+			}
+
+			function initLine() {
+				var material = new THREE.LineBasicMaterial({ color: 0x0000ff });
+				var geometry = new THREE.Geometry();
+				// 底下定義幾個點, 畫出來的line就會把他們都串起來, 唯獨頭尾不會串 (the line is not closed)
+				geometry.vertices.push(new THREE.Vector3(-2, 0, 0));
+				geometry.vertices.push(new THREE.Vector3(0, 2, 0));
+				geometry.vertices.push(new THREE.Vector3(2, 0, 0));
+
+				var line = new THREE.Line(geometry, material);
+
+				workspace.scene.add( line );
+				renderObjs.line = line;
+			}
+
+			var workspace = {};
+			var renderObjs = {};
+			
+			document.body.onload = function() {
+				detectWebGKAndRun();
+			};
+		</script>
+		<div id="info">Description</div>
+		<div id="container">
+			
+		</div>
+	</body>
+</html>
