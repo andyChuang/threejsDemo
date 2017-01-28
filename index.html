@@ -18,9 +18,14 @@
 		</style>
 	</head>
 	<body>
+		<script
+		src="https://code.jquery.com/jquery-3.1.1.min.js"
+		integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+		crossorigin="anonymous"></script>
 		<script src="threeJs/three.js"></script>
 		<script src="threeJs/Detector.js"></script>
 		<script src="threeJs/TrackballControls.js"></script>
+		<script src="Yugioh.js"></script>
 		<script>
 			// To check if the browser supports webGL
 			function detectWebGKAndRun() {
@@ -36,8 +41,8 @@
 			// render loop, 60 times per second
 			function animate() {
 				requestAnimationFrame( animate );
-				workspace.controls.update();
-				workspace.renderer.render( workspace.scene, workspace.camera );
+				yugioh.controls.update();
+				yugioh.renderer.render( yugioh.scene, yugioh.camera );
 				
 				// write what you want the canvas render
 				rotateCube(renderObjs.cube);
@@ -50,46 +55,16 @@
 			}
 
 			function init() {
-
-				workspace.scene = new THREE.Scene();
-
-				// Four params:
-				// field of view: 視野的遠度
-				// aspect ratio: You almost always want to use the width of the element divided by the height, or you'll get the same result as when you play old movies on a widescreen TV - the image looks squished.
-				// near, far: objects further away from the camera than the value of far or closer than near won't be rendered (perfomance concern)
-				workspace.camera = new THREE.PerspectiveCamera( 100, window.innerWidth / window.innerHeight, 0.1, 1000 );
-
-				// May have a fallback for old browsers not support webGL
-				workspace.renderer = new THREE.WebGLRenderer();
-				workspace.renderer.setSize( window.innerWidth, window.innerHeight);		
-
-				workspace.camera.position.set(0, 5, 6);
-				workspace.camera.lookAt(new THREE.Vector3(0, 0, 0));
-
-				// Append a canvas element to body
-				document.body.appendChild( workspace.renderer.domElement );	
-
-				// controlls
-				workspace.controls = new THREE.TrackballControls( workspace.camera, workspace.renderer.domElement );
-
-				// axes
-				workspace.scene.add( new THREE.AxisHelper( 10 ) );
-
 				initBattleStage();
 				initCube();
 				initLine();
+				initCards();
 			}
 
 			function initBattleStage() {
-				// instantiate a loader
-				var loader = new THREE.TextureLoader();
-
-				// load a resource
-				loader.load(
-					// resource URL
-					'images/stage.png',
-					// Function when resource is loaded
-					function ( texture ) {
+				var config = [{
+					imageUrl: "images/stage.png",
+					callback: function ( texture ) {
 						// do something with the texture
 						var material = new THREE.MeshBasicMaterial( {
 							map: texture
@@ -99,18 +74,34 @@
 						plane.lookAt(new THREE.Vector3(0, 1, 0));
 						plane.material.side = THREE.DoubleSide;
 
-				
-						workspace.scene.add( plane );
-					},
-					// Function called when download progresses
-					function ( xhr ) {
-						console.log( (xhr.loaded / xhr.total * 100) + '% loaded' );
-					},
-					// Function called when download errors
-					function ( xhr ) {
-						console.log( 'An error happened' );
+						yugioh.scene.add( plane );
 					}
-				);
+				}];
+
+				loadImages(config);
+			}
+
+			function loadImages(configs) {
+				// instantiate a loader
+				var loader = new THREE.TextureLoader();
+
+				$(configs).each(function(idx, config){
+					// load a resource
+					loader.load(
+						// resource URL
+						config.imageUrl,
+						// Function when resource is loaded
+						config.callback,
+						// Function called when download progresses
+						function ( xhr ) {
+							console.log( (xhr.loaded / xhr.total * 100) + '% loaded' );
+						},
+						// Function called when download errors
+						function ( xhr ) {
+							console.log( 'An error happened' );
+						}
+					);
+				});
 			}
 
 			function initCube() {
@@ -119,7 +110,7 @@
 				var material = new THREE.MeshBasicMaterial( { color: 0x00ff00, wireframe: true  } );
 				var cube = new THREE.Mesh( geometry, material );
 				cube.position.set(1, 1, -5);
-				workspace.scene.add( cube );
+				yugioh.scene.add( cube );
 				renderObjs.cube = cube;
 			}
 
@@ -133,20 +124,25 @@
 
 				var line = new THREE.Line(geometry, material);
 
-				workspace.scene.add( line );
+				yugioh.scene.add( line );
 				renderObjs.line = line;
 			}
 
-			var workspace = {};
+			function initCards() {
+				var card1 = new yugioh.card("black-magician-girl", "images/cards/black-magician-girl.jpg", yugioh.cardConfig.me.mon3);
+				card1.mesh();
+				var card2 = new yugioh.card("blue-eyes-white-dragon", "images/cards/blue-eyes-white-dragon.jpg", yugioh.cardConfig.enemy.mon2);
+				card2.mesh();
+			}
+
+			var yugioh = new Yugioh();
 			var renderObjs = {};
 			
 			document.body.onload = function() {
 				detectWebGKAndRun();
 			};
 		</script>
-		<div id="info">Description</div>
-		<div id="container">
-			
-		</div>
+		<div id="info">YUGIOH</div>
+		<div id="container"></div>
 	</body>
 </html>
