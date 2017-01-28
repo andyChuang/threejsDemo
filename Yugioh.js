@@ -15,9 +15,16 @@ var Yugioh = function() {
 				lookat: { x: -1.45,  y: 1,  z: 1.35 }
 			},
 			mon3: {
-				size: { x: 1, y: 1.3 },
-				pos: { x: -0.05, y: 0.001, z: 1.35 },
-				lookat: { x: -0.05,  y: 1,  z: 1.35 }
+				card: {
+					size: { x: 1, y: 1.3 },
+					pos: { x: -0.05, y: 0.001, z: 1.35 },
+					lookat: { x: -0.05,  y: 1,  z: 1.35 }
+				},
+				figure: {
+					size: { x: 2, y: 2 },
+					pos: { x: -0.05, y: 2, z: 1.35 },
+					lookat: { x: -0.05,  y: 2,  z: 2.35 }
+				}
 			},
 			mon4: {
 				size: { x: 1, y: 1.3 },
@@ -74,9 +81,16 @@ var Yugioh = function() {
 				lookat: { x: -0.05,  y: -1,  z: -1.35 }
 			},
 			mon4: {
-				size: { x: 1, y: 1.3 },
-				pos: { x: 1.35, y: 0.001, z: -1.35 },
-				lookat: { x: 1.35,  y: -1,  z: -1.35 }
+				card: {
+					size: { x: 1, y: 1.3 },
+					pos: { x: 1.35, y: 0.001, z: -1.35 },
+					lookat: { x: 1.35,  y: -1,  z: -1.35 }
+				},
+				figure: {
+					size: { x: 2, y: 2 },
+					pos: { x: 1.35, y: 2, z: -1.35 },
+					lookat: { x: 1.35,  y: 2,  z: -2.35 }
+				}
 			},
 			mon5: {
 				size: { x: 1, y: 1.3 },
@@ -125,20 +139,19 @@ var Yugioh = function() {
 		yugioh.renderer = new THREE.WebGLRenderer();
 		yugioh.renderer.setSize( window.innerWidth, window.innerHeight);		
 
-		yugioh.camera.position.set(0, 5, 2);
-		yugioh.camera.lookAt(new THREE.Vector3(0, 0, 0));
+		yugioh.camera.position.set(1.2, 1.5, 3.6);
 
 		// Append a canvas element to body
 		document.body.appendChild( yugioh.renderer.domElement );	
 
 		// controlls
 		yugioh.controls = new THREE.TrackballControls( yugioh.camera, yugioh.renderer.domElement );
-
+		yugioh.controls.target = new THREE.Vector3(-0.3, 1, -30);
 		// axes
 		yugioh.scene.add( new THREE.AxisHelper( 10 ) );
 	};
 
-	yugioh.card = function(name, path, config) {
+	yugioh.card = function(name, cardPath, figurePath, config) {
 		var self = this;
 		self.name = name;
 
@@ -149,17 +162,46 @@ var Yugioh = function() {
 			// load a resource
 			loader.load(
 				// resource URL
-				path,
+				cardPath,
 				// Function when resource is loaded
 				function ( texture ) {
 					// do something with the texture
 					var material = new THREE.MeshBasicMaterial( {
 						map: texture
 					 } );
-					console.log(yugioh.scene);
-					var card = new THREE.Mesh( new THREE.PlaneGeometry( config.size.x, config.size.y), material );				
-					card.position.set(config.pos.x, config.pos.y, config.pos.z);
-					card.lookAt(new THREE.Vector3(config.lookat.x, config.lookat.y, config.lookat.z));
+
+					var card = new THREE.Mesh( new THREE.PlaneGeometry( config.card.size.x, config.card.size.y), material );				
+					card.position.set(config.card.pos.x, config.card.pos.y, config.card.pos.z);
+					card.lookAt(new THREE.Vector3(config.card.lookat.x, config.card.lookat.y, config.card.lookat.z));
+					card.material.side = THREE.DoubleSide;
+
+					yugioh.scene.add( card );
+				},
+				// Function called when download progresses
+				function ( xhr ) {
+					console.log( (xhr.loaded / xhr.total * 100) + '% loaded' );
+				},
+				// Function called when download errors
+				function ( xhr ) {
+					console.log( 'An error happened' );
+				}
+			);
+
+			loader.load(
+				// resource URL
+				figurePath,
+				// Function when resource is loaded
+				function ( texture ) {
+					// do something with the texture
+					var material = new THREE.MeshBasicMaterial( {
+						map: texture,
+						transparent: true, 
+						opacity: 1
+					 } );
+
+					var card = new THREE.Mesh( new THREE.PlaneGeometry( config.figure.size.x, config.figure.size.y ), material );				
+					card.position.set(config.figure.pos.x, config.figure.pos.y, config.figure.pos.z);
+					card.lookAt(new THREE.Vector3(config.figure.lookat.x, config.figure.lookat.y, config.figure.lookat.z));
 					card.material.side = THREE.DoubleSide;
 
 					yugioh.scene.add( card );
