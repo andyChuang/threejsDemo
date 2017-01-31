@@ -29,6 +29,7 @@
 		<script src="threeJs/loaders/collada/Animation.js"></script>
 		<script src="threeJs/loaders/collada/AnimationHandler.js"></script>
 		<script src="threeJs/loaders/collada/KeyFrameAnimation.js"></script>
+		<script src="threeJs/GPUParticleSystem.js"></script>
 		<script src="Yugioh.js"></script>
 		<script>
 			// To check if the browser supports webGL
@@ -50,6 +51,8 @@
 				
 				// write what you want the canvas render
 				rotateCube(renderObjs.cube);
+				updateParticle();
+				yugioh.renderer.render(yugioh.scene, yugioh.camera);
 			}
 
 			function rotateCube(cube) {
@@ -59,12 +62,65 @@
 			}
 
 			function init() {
-				initSpotLight();
+				initLight();
 				initBattleStage();
 				initCube();
 				initLine();
 				initCards();
-				loadModels();
+				initParticle();
+				//loadModels();
+			}
+
+			function initParticle() {
+				particleSystem = new THREE.GPUParticleSystem({
+					maxParticles: 100
+				});
+				yugioh.scene.add(particleSystem);
+
+				// options passed during each spawned
+				options = {
+					position: new THREE.Vector3(
+						yugioh.cardConfig.me.mon3.figure.pos.x,
+						yugioh.cardConfig.me.mon3.figure.pos.y,
+						yugioh.cardConfig.me.mon3.figure.pos.z),
+					positionRandomness: 0.1,
+					velocity: new THREE.Vector3(),
+					velocityRandomness: 0.5,
+					color: 0xffffff,
+					colorRandomness: 0,
+					turbulence: 0,
+					lifetime: 10,
+					size: 30,
+					sizeRandomness: 1
+				};
+
+				spawnerOptions = {
+					spawnRate: 206,
+					horizontalSpeed: 0,
+					verticalSpeed: 0,
+					timeScale: 0.2
+				}
+			}
+
+			function updateParticle() {
+				var delta = clock.getDelta() * spawnerOptions.timeScale;
+				tick += delta;
+
+				if (tick < 0) tick = 0;
+
+				if (delta > 0) {
+					options.position.x = options.position.x + Math.sin(tick * spawnerOptions.horizontalSpeed) * 20;
+					options.position.y = options.position.y + Math.sin(tick * spawnerOptions.verticalSpeed) * 10;
+					options.position.z = options.position.z + Math.sin(tick * spawnerOptions.horizontalSpeed + spawnerOptions.verticalSpeed) * 5;
+
+					for (var x = 0; x < spawnerOptions.spawnRate * delta; x++) {
+						// Yep, that's really it.	Spawning particles is super cheap, and once you spawn them, the rest of
+						// their lifecycle is handled entirely on the GPU, driven by a time uniform updated below
+						particleSystem.spawnParticle(options);
+					}
+				}
+
+				particleSystem.update(tick);
 			}
 
 			function initBattleStage() {
@@ -110,25 +166,20 @@
 				});
 			}
 
-			function loadModels() {
+			function loadModels(modelUrl) {
 				// instantiate a loader
 				var loader = new THREE.ColladaLoader();
-
+				loader.options.convertUpAxis = true;
 				loader.load(
-					// resource URL
-					'models/dark-magician-girl/Model.dae',
-					// Function when resource is loaded
+					modelUrl,
 					function ( collada ) {
-						
-
 						dae = collada.scene;
-						/*dae.traverse( function ( child ) {
+						dae.traverse( function ( child ) {
 							if ( child instanceof THREE.SkinnedMesh ) {
-								console.log(child);
 								var animation = new THREE.Animation( child, child.geometry.animation );
 								animation.play();
 							}
-						} );*/
+						} );
 						dae.scale.x = dae.scale.y = dae.scale.z = 0.2;
 						dae.updateMatrix();
 						yugioh.scene.add( dae );
@@ -140,7 +191,7 @@
 				);
 			}
 
-			function initSpotLight() {
+			function initLight() {
 				/*var light = new THREE.SpotLight();
 	      		light.castShadow = true;
 		      	light.position.set( 0, 230, 0 );
@@ -191,6 +242,11 @@
 
 			var yugioh = new Yugioh();
 			var renderObjs = {};
+			var tick = 0,
+			clock = new THREE.Clock(true),
+			options,
+			spawnerOptions,
+			particleSystem;
 			
 			document.body.onload = function() {
 				detectWebGKAndRun();
