@@ -25,6 +25,10 @@
 		<script src="threeJs/three.js"></script>
 		<script src="threeJs/Detector.js"></script>
 		<script src="threeJs/TrackballControls.js"></script>
+		<script src="threeJs/loaders/ColladaLoader.js"></script>
+		<script src="threeJs/loaders/collada/Animation.js"></script>
+		<script src="threeJs/loaders/collada/AnimationHandler.js"></script>
+		<script src="threeJs/loaders/collada/KeyFrameAnimation.js"></script>
 		<script src="Yugioh.js"></script>
 		<script>
 			// To check if the browser supports webGL
@@ -55,10 +59,12 @@
 			}
 
 			function init() {
+				initSpotLight();
 				initBattleStage();
 				initCube();
 				initLine();
 				initCards();
+				loadModels();
 			}
 
 			function initBattleStage() {
@@ -102,6 +108,46 @@
 						}
 					);
 				});
+			}
+
+			function loadModels() {
+				// instantiate a loader
+				var loader = new THREE.ColladaLoader();
+
+				loader.load(
+					// resource URL
+					'models/dark-magician-girl/Model.dae',
+					// Function when resource is loaded
+					function ( collada ) {
+						
+
+						dae = collada.scene;
+						/*dae.traverse( function ( child ) {
+							if ( child instanceof THREE.SkinnedMesh ) {
+								console.log(child);
+								var animation = new THREE.Animation( child, child.geometry.animation );
+								animation.play();
+							}
+						} );*/
+						dae.scale.x = dae.scale.y = dae.scale.z = 0.2;
+						dae.updateMatrix();
+						yugioh.scene.add( dae );
+					},
+					// Function called when download progresses
+					function ( xhr ) {
+						console.log( (xhr.loaded / xhr.total * 100) + '% loaded' );
+					}
+				);
+			}
+
+			function initSpotLight() {
+				/*var light = new THREE.SpotLight();
+	      		light.castShadow = true;
+		      	light.position.set( 0, 230, 0 );
+		      	yugioh.scene.add(light);*/
+
+		      	var light = new THREE.AmbientLight( 0xFFFFFF ); // soft white light
+				yugioh.scene.add( light );
 			}
 
 			function initCube() {
